@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import httpStatus from 'http-status';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import config from '../../config';
 import { AppError } from '../../errors/AppError';
 import { Bike } from '../Bike/bike.model';
 import { TBookingBike } from './booking.interface';
 import { Booking } from './booking.model';
 
-const createBookingIntoDB = async (payload: TBookingBike) => {
+const createBookingIntoDB = async (token: string, payload: TBookingBike) => {
   // Check if the bike is available
   const { bikeId, startTime } = payload;
   const bike = await Bike.findById(bikeId);
@@ -16,10 +19,20 @@ const createBookingIntoDB = async (payload: TBookingBike) => {
     throw new AppError(httpStatus.NOT_FOUND, 'bike not available');
   }
 
+  const decoded = jwt.verify(
+    token,
+    config.jwt_access_secret as string,
+  ) as JwtPayload;
+
+  const { role, userId, iat } = decoded;
+
+  const newStartTime = new Date();
+
   // Create new booking
   const newBooking = new Booking({
     bikeId,
-    startTime,
+    userId,
+    startTime: newStartTime,
     returnTime: null,
     totalCost: 0,
     isReturned: false,
@@ -57,6 +70,8 @@ const returnBookingIntoDB = async (id: string) => {
   const rentalDuration =
     (returnTime.getTime() - new Date(rental.startTime).getTime()) /
     (1000 * 60 * 60); // in hours
+
+  // const totalCost = Math.round( rentalDuration * bike.pricePerHour);
   const totalCost = rentalDuration * bike.pricePerHour;
 
   // Update rental and bike status
@@ -71,7 +86,13 @@ const returnBookingIntoDB = async (id: string) => {
   return rental;
 };
 
+const getAllRentalsFromDB = async () => {
+  const rentals = await Booking.find({});
+  return rentals;
+};
+
 export const BookingService = {
   createBookingIntoDB,
   returnBookingIntoDB,
+  getAllRentalsFromDB,
 };

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import bcrypt from 'bcrypt';
 import httpStatus from 'http-status';
-import mongoose from 'mongoose';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import QueryBuilder from '../../builder/QueryBuilder';
 import config from '../../config';
 import { AppError } from '../../errors/AppError';
@@ -73,6 +73,7 @@ const loginUser = async (payload: Partial<TLoginUser>) => {
   return {
     accessToken,
     refreshToken,
+    user,
   };
 };
 
@@ -89,54 +90,36 @@ const getAllUsersFromDB = async (query: Record<string, unknown>) => {
   return result;
 };
 
-const getUserByIdFromDB = async (id: string) => {
-  const user = await User.findById(id);
-  return user;
+const getUserByIdFromDB = async (token: string) => {
+  const decoded = jwt.verify(
+    token,
+    config.jwt_access_secret as string,
+  ) as JwtPayload;
+
+  const { role, userId, iat } = decoded;
+  const user = await User.findById(userId);
+
+  const userData = User.findOne({ email: user?.email })
+    .select('-password')
+    .lean();
+  return userData;
 };
 
-const deleteUserFromDB = async (id: string) => {
-  const session = await mongoose.startSession();
+const updateUser = async (token: string, payload: Partial<TUser>) => {
+  const decoded = jwt.verify(
+    token,
+    config.jwt_access_secret as string,
+  ) as JwtPayload;
 
-  try {
-    session.startTransaction();
-    const deletedUser = await User.findByIdAndUpdate(
-      id,
-      { isDeleted: true },
-      {
-        new: true,
-        session,
-      },
-    );
+  const { role, userId, iat } = decoded;
 
-    if (!deletedUser) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Failed to delete user');
-    }
+  const result = await User.findByIdAndUpdate(userId, payload);
 
-    await session.commitTransaction();
-    await session.endSession();
-    return deletedUser;
-  } catch (error) {
-    session.abortTransaction();
-    session.endSession();
-    throw new AppError(httpStatus.BAD_REQUEST, 'Failed to delete user');
-  }
-};
+  const userData = User.findOne({ email: result?.email })
+    .select('-password')
+    .lean();
 
-const updateUser = async (id: string, payload: Partial<TUser>) => {
-  const { name, ...remainingUserData } = payload;
-
-  const modifiedUpdatedData: Record<string, unknown> = {
-    ...remainingUserData,
-  };
-
-  if (name && Object.keys(name).length) {
-    for (const [key, value] of Object.keys(name)) {
-      modifiedUpdatedData[`name.${key}`] = value;
-    }
-  }
-
-  const result = await User.findByIdAndUpdate(id, modifiedUpdatedData);
-  return result;
+  return userData;
 };
 
 export const UserServices = {
@@ -144,6 +127,6 @@ export const UserServices = {
   loginUser,
   getAllUsersFromDB,
   getUserByIdFromDB,
-  deleteUserFromDB,
+
   updateUser,
 };

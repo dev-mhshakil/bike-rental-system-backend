@@ -23,39 +23,28 @@ const getAllUsers = catchAsync(async (req, res) => {
   });
 });
 
-const getUserById = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const result = await UserServices.getUserByIdFromDB(id);
+const getProfile = catchAsync(async (req, res) => {
+  const token = req.headers.authorization;
+  const result = await UserServices.getUserByIdFromDB(token as string);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'User data fetched successfully',
-    data: result,
-  });
-});
-
-const deleteUser = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const result = await UserServices.deleteUserFromDB(id);
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Student deleted successfully',
+    message: 'User profile retrieved successfully',
     data: result,
   });
 });
 
 const updateUserById = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const { user: updatedUserData } = req.body;
+  const token = req.headers.authorization;
+  const payload = req.body;
 
   // data validation using zod
 
-  const result = await UserServices.updateUser(id, updatedUserData);
+  const result = await UserServices.updateUser(token as string, payload);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Student updated successfully',
+    message: 'Profile updated successfully',
     data: result,
   });
 });
@@ -64,7 +53,7 @@ const updateUserById = catchAsync(async (req, res) => {
 const loginUser = catchAsync(async (req, res) => {
   const result = await UserServices.loginUser(req.body);
 
-  const { refreshToken, accessToken } = result;
+  const { refreshToken, accessToken, user } = result;
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
@@ -76,52 +65,16 @@ const loginUser = catchAsync(async (req, res) => {
     message: 'Login successful',
     data: {
       accessToken,
+      data: user,
     },
   });
 });
-
-// Get Profile
-// export const getProfile = async (req: Request, res: Response) => {
-//   const user = await User.findById(req.user.id);
-
-//   if (!user) {
-//     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
-//   }
-
-//   res.status(httpStatus.OK).json({
-//     success: true,
-//     statusCode: httpStatus.OK,
-//     message: 'User profile retrieved successfully',
-//     data: user,
-//   });
-// };
-
-// // Update Profile
-// export const updateProfile = async (req: Request, res: Response) => {
-//   const updates = req.body;
-
-//   const user = await User.findByIdAndUpdate(req.user.id, updates, {
-//     new: true,
-//     runValidators: true,
-//   });
-
-//   if (!user) {
-//     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
-//   }
-
-//   res.status(httpStatus.OK).json({
-//     success: true,
-//     statusCode: httpStatus.OK,
-//     message: 'Profile updated successfully',
-//     data: user,
-//   });
-// };
 
 export const UserController = {
   createUser,
   loginUser,
   getAllUsers,
-  getUserById,
-  deleteUser,
+  getProfile,
+
   updateUserById,
 };

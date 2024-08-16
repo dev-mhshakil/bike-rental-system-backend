@@ -9,7 +9,7 @@ router.post('/auth/login', UserController.loginUser);
 
 router.get('/', UserController.getAllUsers);
 
-router.get('/:id', UserController.getUserById);
+router.get('/users/me', UserController.getProfile);
 
 router.post(
   '/auth/signup',
@@ -18,11 +18,9 @@ router.post(
 );
 
 router.put(
-  '/:id',
+  '/users/me',
   validateRequest(UserValidation.updateUserValidationSchema),
   UserController.updateUserById,
 );
-
-router.delete('/:id', UserController.deleteUser);
 
 export const UserRoutes = router;

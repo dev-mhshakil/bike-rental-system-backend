@@ -4,7 +4,12 @@ import sendResponse from '../../utils/sendResponse';
 import { BookingService } from './booking.service';
 
 const createBooking = catchAsync(async (req, res) => {
-  const result = await BookingService.createBookingIntoDB(req.body);
+  const token = req.headers.authorization;
+  const bookingData = req.body;
+  const result = await BookingService.createBookingIntoDB(
+    token as string,
+    bookingData,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -26,7 +31,19 @@ const returnBooking = catchAsync(async (req, res) => {
   });
 });
 
+const getAllRentals = catchAsync(async (req, res) => {
+  const result = await BookingService.getAllRentalsFromDB();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Rentals fetched successfully',
+    data: result,
+  });
+});
+
 export const BookingController = {
   createBooking,
   returnBooking,
+  getAllRentals,
 };
