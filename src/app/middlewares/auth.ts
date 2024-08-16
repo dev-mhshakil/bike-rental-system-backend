@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import config from '../config';
 import { AppError } from '../errors/AppError';
-import { TUserRole } from '../modules/user/user.interface';
-import { User } from '../modules/user/user.model';
+
+import { TUserRole } from '../modules/User/user.interface';
+import { User } from '../modules/User/user.model';
 import catchAsync from '../utils/catchAsync';
 
 const auth = (...requiredRoles: TUserRole[]) => {
@@ -22,36 +24,17 @@ const auth = (...requiredRoles: TUserRole[]) => {
       config.jwt_access_secret as string,
     ) as JwtPayload;
 
+    console.log(decoded);
+
     const { role, userId, iat } = decoded;
     // checking if user is exist
-    const user = await User.isUserExistsByCustomId(userId);
+    const user = await User.findById(userId);
+    console.log(user);
+
     if (!user) {
       throw new AppError(httpStatus.NOT_FOUND, 'This user is not found !');
     }
 
-    const isDeleted = user?.isDeleted;
-
-    // checking if the user is already deleted
-    if (isDeleted) {
-      throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
-    }
-
-    // checking if the user is blocked
-    const userStatus = user?.status;
-
-    if (userStatus === 'blocked') {
-      throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked !');
-    }
-
-    if (
-      user.passwordChangeAt &&
-      User.isJWTIssuedBeforePasswordChanged(
-        user.passwordChangeAt,
-        iat as number,
-      )
-    ) {
-      throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized !');
-    }
     if (requiredRoles && !requiredRoles.includes(role)) {
       throw new AppError(
         httpStatus.FORBIDDEN,
