@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cors({ origin: ['http://localhost:5173'] }));
 
 // application routes
-app.use('/api/v1', router);
+app.use('/api', router);
 
 const test = async (req: Request, res: Response) => {
   res.send('Welcome to the server');
