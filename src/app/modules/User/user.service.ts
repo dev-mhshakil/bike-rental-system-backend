@@ -2,10 +2,8 @@
 import bcrypt from 'bcrypt';
 import httpStatus from 'http-status';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import QueryBuilder from '../../builder/QueryBuilder';
 import config from '../../config';
 import { AppError } from '../../errors/AppError';
-import { userSearchableFields } from './user.constant';
 import { TLoginUser, TUser } from './user.interface';
 import { User } from './user.model';
 import { createToken } from './user.utils';
@@ -77,19 +75,6 @@ const loginUser = async (payload: Partial<TLoginUser>) => {
   };
 };
 
-const getAllUsersFromDB = async (query: Record<string, unknown>) => {
-  const userQuery = new QueryBuilder(User.find(), query)
-    .search(userSearchableFields)
-    .filter()
-    .sort()
-    .paginate()
-    .fields();
-
-  const result = await userQuery.modelQuery;
-
-  return result;
-};
-
 const getUserByIdFromDB = async (token: string) => {
   const decoded = jwt.verify(
     token,
@@ -125,8 +110,6 @@ const updateUser = async (token: string, payload: Partial<TUser>) => {
 export const UserServices = {
   createUserInDB,
   loginUser,
-  getAllUsersFromDB,
   getUserByIdFromDB,
-
   updateUser,
 };

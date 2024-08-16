@@ -7,8 +7,6 @@ const router = express.Router();
 
 router.post('/auth/login', UserController.loginUser);
 
-router.get('/', UserController.getAllUsers);
-
 router.get('/users/me', UserController.getProfile);
 
 router.post(

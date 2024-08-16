@@ -13,16 +13,6 @@ const createUser = catchAsync(async (req, res) => {
   });
 });
 
-const getAllUsers = catchAsync(async (req, res) => {
-  const result = await UserServices.getAllUsersFromDB(req.query);
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'User list fetched successfully',
-    data: result,
-  });
-});
-
 const getProfile = catchAsync(async (req, res) => {
   const token = req.headers.authorization;
   const result = await UserServices.getUserByIdFromDB(token as string);
@@ -73,8 +63,6 @@ const loginUser = catchAsync(async (req, res) => {
 export const UserController = {
   createUser,
   loginUser,
-  getAllUsers,
   getProfile,
-
   updateUserById,
 };
